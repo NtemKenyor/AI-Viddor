@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Viddor</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header h1 {
+            font-size: 3em;
+        }
+        #video-display {
+            width: 80%;
+            max-width: 800px;
+            height: 450px;
+            background-color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        #input-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            max-width: 600px;
+        }
+        #input-bar input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        #input-bar button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #1E88E5;
+            color: #FFF;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        #input-bar button:hover {
+            background-color: #1565C0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AI Viddor</h1>
+        <img src="logo.svg" alt="AI Viddor Logo">
+    </header>
+    <div id="video-display">
+        <video id="generated-video" controls></video>
+    </div>
+    <div id="input-bar">
+        <input type="text" id="prompt-input" placeholder="Enter your prompt here">
+        <button id="generate-button">Generate</button>
+    </div>
+
+    <script>
+        document.getElementById('generate-button').addEventListener('click', async () => {
+            const prompt = document.getElementById('prompt-input').value;
+            if (!prompt) return alert('Please enter a prompt.');
+
+            try {
+                const response1 = await fetch('http://127.0.0.1:5000/generate-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: prompt })
+                });
+                const { text: story } = await response1.json();
+
+                const response2 = await fetch('http://127.0.0.1:5000/generate-images', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompts: story.split('.').map(s => s.trim()).filter(s => s) })
+                });
+                const { images } = await response2.json();
+
+                const audio_clips = [];
+                for (let i = 0; i < story.split('.').length; i++) {
+                    const response3 = await fetch('http://127.0.0.1:5000/generate-audio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: story.split('.')[i].trim(), filename: `output_${i}.mp3` })
+                    });
+                    const audio_clip = await response3.blob();
+                    const audio_url = URL.createObjectURL(audio_clip);
+                    audio_clips.push(audio_url);
+                }
+
+                const response4 = await fetch('http://127.0.0.1:5000/create-video', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images, audio_clips })
+                });
+                const video_blob = await response4.blob();
+                const video_url = URL.createObjectURL(video_blob);
+                document.getElementById('generated-video').src = video_url;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
