@@ -77,6 +77,11 @@ def clean_output_directory(directory="."):
         if file.startswith("output") and (file.endswith(".mp3") or file.endswith(".mp4")):
             os.remove(os.path.join(directory, file))
 
+@app.route('/', methods=['GET'])
+def welcome():
+    # prompt = generate_random_prompt()
+    return jsonify({"prompt": "WELCOME TO AI VIDDOR API"})
+
 @app.route('/generate-prompt', methods=['GET'])
 def api_generate_prompt():
     prompt = generate_random_prompt()
