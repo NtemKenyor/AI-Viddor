@@ -118,5 +118,5 @@ def api_clean_output_directory():
     clean_output_directory()
     return jsonify({"message": "Output directory cleaned"})
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True)
