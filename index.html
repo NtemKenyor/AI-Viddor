@@ -75,19 +75,20 @@
     </div>
 
     <script>
+        var url_ = "https://roynek.com/AI-Viddor" 
         document.getElementById('generate-button').addEventListener('click', async () => {
             const prompt = document.getElementById('prompt-input').value;
             if (!prompt) return alert('Please enter a prompt.');
 
             try {
-                const response1 = await fetch('http://127.0.0.1:5000/generate-text', {
+                const response1 = await fetch(url_+'/generate-text', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: prompt })
                 });
                 const { text: story } = await response1.json();
 
-                const response2 = await fetch('http://127.0.0.1:5000/generate-images', {
+                const response2 = await fetch(url_+'/generate-images', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompts: story.split('.').map(s => s.trim()).filter(s => s) })
@@ -96,7 +97,7 @@
 
                 const audio_clips = [];
                 for (let i = 0; i < story.split('.').length; i++) {
-                    const response3 = await fetch('http://127.0.0.1:5000/generate-audio', {
+                    const response3 = await fetch(url_+'/generate-audio', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text: story.split('.')[i].trim(), filename: `output_${i}.mp3` })
@@ -106,7 +107,7 @@
                     audio_clips.push(audio_url);
                 }
 
-                const response4 = await fetch('http://127.0.0.1:5000/create-video', {
+                const response4 = await fetch(url_+'/create-video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ images, audio_clips })
