@@ -120,6 +120,37 @@
         .input-bar button:hover {
             background-color: #1565C0;
         }
+
+        .loader {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 100px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader2 {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #013c64; /* Blue */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin2 3s linear infinite;
+            margin: 100px auto;
+        }
+
+        @keyframes spin2 {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 768px) {
             .grid-container {
                 display: flex;
@@ -141,8 +172,9 @@
             <button class="close-btn" onclick="toggleDebugPopup()">Close</button>
             <h2>Debug/Process Log</h2>
             <pre id="debug-log"> 
-                <div>This code may take upto <br/>5 minutes to complete. <br/>No logs yet... </div>
+                <div id="debug-log-area">This code may take upto <br/>5 minutes to complete... <br/>... </div>
 
+                <div class="loader" style="display: none;"></div>
             </pre>
         </div>
 
@@ -164,6 +196,7 @@
                 </div>
                 <div class="box-content" id="prompt-split">
                     <!-- Split text will be shown here -->
+                    
                 </div>
             </div>
             <div class="grid-item" id="box3">
@@ -173,6 +206,7 @@
                 </div>
                 <div class="box-content" id="process-debug">
                     <!-- API call debug information will be shown here -->
+                    <div class="loader2" style="display: none;"></div>
                 </div>
             </div>
             <div class="grid-item" id="box4">
@@ -209,19 +243,31 @@
         const url_ = "https://roynek.com/AI-Viddor/API";
         // const url_ = "http://127.0.0.1:5000";
 
+        // Define the timeout duration in milliseconds (e.g., 60 seconds * 30)
+        const timeoutDuration = 60000 * 30;
+
+        // var controller = new AbortController();
+        // var timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
+
         document.getElementById('generate-button').addEventListener('click', async () => {
             const prompt = document.getElementById('prompt-input').value;
+            
             if (!prompt) return alert('Please enter a prompt.');
             document.getElementById('debug-popup').style.display = 'block';
 
             try {
+                document.querySelector('.loader').style.display = 'block';
+                document.querySelector('.loader2').style.display = 'block';
+
                 const response1 = await fetch(url_+'/generate-text', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: prompt })
                 });
                 const { text: story } = await response1.json();
-                document.getElementById('process-debug').innerText = `Generated Text: ${story}`;
+                document.getElementById('process-debug').innerText = `Generated Text Successfully.`;
+                // document.getElementById('process-debug').innerHTML += `<div>Generated Text: ${story}</div>`;
 
                 document.getElementById('prompt-split').innerHTML = story.split('.').map(s => `<p>${s.trim()}</p>`).join('');
 
@@ -231,32 +277,54 @@
                     body: JSON.stringify({ prompts: story.split('.').map(s => s.trim()).filter(s => s) })
                 });
                 const { images } = await response2.json();
+                document.getElementById('process-debug').innerHTML += `<br/>Generated Images Successfully`;
                 document.getElementById('generated-images').innerHTML = images.map(url => `<img src="${url}" alt="Generated Image" style="width:100%; height:auto;"/>`).join('');
 
                 const audio_clips = [];
                 for (let i = 0; i < story.split('.').length; i++) {
+                    var controller = new AbortController();
+                    var timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
+
                     const response3 = await fetch(url_+'/generate-audio', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: story.split('.')[i].trim(), filename: `output_${i}.mp3` })
+                        body: JSON.stringify({ text: story.split('.')[i].trim(), filename: `output_${i}.mp3` }),
+                        signal: controller.signal // Attach the AbortController signal
                     });
                     const audio_clip = await response3.blob();
                     const audio_url = URL.createObjectURL(audio_clip);
                     audio_clips.push(audio_url);
+
+                    // Clear the timeout if the request completes successfully
+                    clearTimeout(timeoutId);
+
                 }
+                document.getElementById('process-debug').innerHTML += `<br/>Generated Audi Files Successfully`;
                 document.getElementById('audio-files').innerHTML = audio_clips.map(url => `<audio controls src="${url}"></audio>`).join('');
 
+
+                var controller = new AbortController();
+                var timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
                 const response4 = await fetch(url_+'/create-video', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ images, audio_clips })
+                    body: JSON.stringify({ images, audio_clips }),
+                    signal: controller.signal // Attach the AbortController signal
                 });
+
+                 // Clear the timeout if the request completes successfully
+                 clearTimeout(timeoutId);
+
                 const video_blob = await response4.blob();
                 const video_url = URL.createObjectURL(video_blob);
+                document.getElementById('process-debug').innerHTML += `<br/>Generated Video`;
                 document.getElementById('video-file').innerHTML = `<video controls src="${video_url}" style="width:100%; height:auto;"></video>`;
                 
+
+                document.querySelector('.loader').style.display = 'none';
+                document.querySelector('.loader2').style.display = 'none';
             } catch (error) {
-                document.getElementById('process-debug').innerText = `Error: ${error.message}`;
+                document.getElementById('process-debug').innerText += `<br/>Error: ${error.message}`;
             }
         });
 
