@@ -8,13 +8,16 @@ from gtts import gTTS
 from moviepy.editor import ImageClip, concatenate_videoclips, AudioFileClip, concatenate_audioclips
 from dotenv import load_dotenv
 import requests
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 # Load environment variables
 load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-app = Flask(__name__)
-CORS(app)
 
 def generate_random_prompt():
     prompts = [
@@ -59,27 +62,72 @@ def generate_audio(text, filename="output.mp3", speed=1.5):
     tts.save(filename)
     return filename
 
+# def create_video(images, audio_clips, output_file="output_video.mp4"):
+#     video_clips = []
+#     for image_url, audio_file in zip(images, audio_clips):
+#         image_clip = ImageClip(image_url).set_duration(AudioFileClip(audio_file).duration)
+#         audio_clip = AudioFileClip(audio_file)
+#         image_clip = image_clip.set_audio(audio_clip)
+#         video_clips.append(image_clip)
+
+#     final_video = concatenate_videoclips(video_clips, method="compose")
+#     final_audio = concatenate_audioclips([AudioFileClip(audio) for audio in audio_clips])
+#     final_video = final_video.set_audio(final_audio)
+#     final_video.write_videofile(output_file, fps=24)
+
 def create_video(images, audio_clips, output_file="output_video.mp4"):
     video_clips = []
-    for image_url, audio_file in zip(images, audio_clips):
-        image_clip = ImageClip(image_url).set_duration(AudioFileClip(audio_file).duration)
-        audio_clip = AudioFileClip(audio_file)
-        image_clip = image_clip.set_audio(audio_clip)
-        video_clips.append(image_clip)
+    
+    try:
+        # Process each image and audio pair
+        for image_url, audio_file in zip(images, audio_clips):
+            # Load and process the image
+            image_clip = ImageClip(image_url)
+            audio_clip = AudioFileClip(audio_file)
+            
+            # Set duration and audio
+            image_clip = image_clip.set_duration(audio_clip.duration).set_audio(audio_clip)
+            video_clips.append(image_clip)
 
-    final_video = concatenate_videoclips(video_clips, method="compose")
-    final_audio = concatenate_audioclips([AudioFileClip(audio) for audio in audio_clips])
-    final_video = final_video.set_audio(final_audio)
-    final_video.write_videofile(output_file, fps=24)
+            # Close the audio and image clips to free up resources
+            audio_clip.close()
+            image_clip.close()
+        
+        # Concatenate video and audio clips
+        final_video = concatenate_videoclips(video_clips, method="compose")
+        final_audio = concatenate_audioclips([AudioFileClip(audio) for audio in audio_clips])
+        
+        # Set the final audio to the final video
+        final_video = final_video.set_audio(final_audio)
+        
+        # Write the video file
+        final_video.write_videofile(output_file, fps=24)
+    
+    except Exception as e:
+        print(f"An error occurred during video creation: {e}")
+    
+    finally:
+        # Clean up resources
+        for clip in video_clips:
+            clip.close()
+        for audio in audio_clips:
+            # audio.close()
+            pass
 
 def clean_output_directory(directory="."):
     for file in os.listdir(directory):
         if file.startswith("output") and (file.endswith(".mp3") or file.endswith(".mp4")):
             os.remove(os.path.join(directory, file))
 
+
+
+app = Flask(__name__)
+CORS(app)
+
 @app.route('/', methods=['GET'])
 def welcome():
     # prompt = generate_random_prompt()
+    print("still on test...")
     return jsonify({"prompt": "WELCOME TO AI VIDDOR API"})
 
 @app.route('/generate-prompt', methods=['GET'])
@@ -92,14 +140,41 @@ def api_generate_text():
     data = request.json
     message = data.get('message')
     text = generate_text(message)
+    print(message)
+    print(text)
     return jsonify({"text": text})
+
+# @app.route('/generate-images', methods=['POST'])
+# def api_generate_images():
+#     data = request.json
+#     prompts = data.get('prompts')
+#     images = generate_images(prompts)
+#     return jsonify({"images": images})
+
 
 @app.route('/generate-images', methods=['POST'])
 def api_generate_images():
-    data = request.json
-    prompts = data.get('prompts')
-    images = generate_images(prompts)
-    return jsonify({"images": images})
+    try:
+        logging.info("Received request to generate images")
+        data = request.json
+        logging.debug(f"Request JSON data: {data}")
+        
+        if not data or 'prompts' not in data:
+            logging.error("No prompts found in the request")
+            return jsonify({"error": "No prompts provided"}), 400
+
+        prompts = data.get('prompts')
+        logging.debug(f"Prompts: {prompts}")
+
+        images = generate_images(prompts)
+        logging.info(f"Generated images: {images}")
+
+        return jsonify({"images": images})
+
+    except Exception as e:
+        logging.exception("An error occurred while generating images")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/generate-audio', methods=['POST'])
 def api_generate_audio():
@@ -115,6 +190,7 @@ def api_create_video():
     images = data.get('images')
     audio_clips = data.get('audio_clips')
     output_file = data.get('output_file', 'output_video.mp4')
+    # return data
     create_video(images, audio_clips, output_file)
     return send_file(output_file, as_attachment=True)
 
@@ -123,5 +199,6 @@ def api_clean_output_directory():
     clean_output_directory()
     return jsonify({"message": "Output directory cleaned"})
 
-# if __name__ == '__main__':
-#     app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
+    
