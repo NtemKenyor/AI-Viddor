@@ -39,6 +39,19 @@ def generate_text(message, max_tokens=300):
     reply = chat.choices[0].message.content
     return reply
 
+def generate_painter(message, max_tokens=3000, canvas_structure=None):
+    messages = [{f"role": "system", "content": "You are a skilled canvas painter and creative. you are very good in drawing. Only return a json structure like this: {canvas_structure} containing details about your drawing/painting/painting etc."}]
+    if message:
+        messages.append({"role": "user", "content": message})
+        chat = openai.ChatCompletion.create(
+            model="gpt-4", 
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=0.7,
+        )
+    reply = chat.choices[0].message.content
+    return reply
+
 def text_to_image_prompts(text):
     sentences = text.split('.')
     prompts = [sentence.strip() for sentence in sentences if sentence]
@@ -120,6 +133,113 @@ def clean_output_directory(directory="."):
             os.remove(os.path.join(directory, file))
 
 
+import json
+
+def get_canvas_standard():
+    canvas_standard = {
+        "shapes": [
+            {
+                "type": "ellipse",
+                "cx": 150,
+                "cy": 100,
+                "rx": 80,
+                "ry": 50,
+                "color": "rgba(255, 0, 0, 0.5)"
+            },
+            {
+                "type": "rectangle",
+                "x": 50,
+                "y": 50,
+                "width": 200,
+                "height": 100,
+                "color": "rgba(0, 255, 0, 0.5)",
+                "borderColor": "black",
+                "borderWidth": 2
+            },
+            {
+                "type": "line",
+                "x1": 300,
+                "y1": 50,
+                "x2": 500,
+                "y2": 150,
+                "color": "blue",
+                "lineWidth": 5
+            },
+            {
+                "type": "text",
+                "x": 200,
+                "y": 300,
+                "text": "Hello, Canvas!",
+                "font": "20px Arial",
+                "color": "black"
+            },
+            {
+                "type": "multi-dot",
+                "positions": [
+                    {"x": 100, "y": 100},
+                    {"x": 150, "y": 150},
+                    {"x": 200, "y": 200},
+                    {"x": 250, "y": 250}
+                ],
+                "radius": 5,
+                "color": "purple"
+            },
+            {
+                "type": "arc",
+                "cx": 600,
+                "cy": 200,
+                "radius": 50,
+                "startAngle": 0,
+                "endAngle": 3.14,
+                "color": "orange",
+                "lineWidth": 4
+            },
+            {
+                "type": "circle",
+                "cx": 700,
+                "cy": 300,
+                "radius": 40,
+                "color": "rgba(0, 0, 255, 0.5)",
+                "borderColor": "black",
+                "borderWidth": 2
+            }
+        ]
+    }
+    
+    return canvas_standard
+
+# Example usage
+# canvas_standard = get_canvas_standard()
+# print(json.dumps(canvas_standard, indent=4))
+
+def extract_json_from_text(text):
+    """
+    Function to extract and clean JSON structure from the AI-generated text.
+    Assumes that the JSON structure is embedded within the text output.
+    """
+
+    # Import necessary modules
+    import json
+    import re
+
+    # Use a regular expression to find JSON-like structures in the text
+    json_like_structures = re.findall(r'\{.*?\}', text, re.DOTALL)
+
+    # If a structure is found, try to parse it as JSON
+    if json_like_structures:
+        for json_str in json_like_structures:
+            try:
+                # Attempt to parse the JSON string
+                parsed_json = json.loads(json_str)
+                return parsed_json
+            except json.JSONDecodeError:
+                continue
+
+    # If no JSON structure is found or parsed, return an empty list
+    return []  # or an appropriate fallback structure
+
+
+
 
 app = Flask(__name__)
 CORS(app)
@@ -130,10 +250,54 @@ def welcome():
     print("still on test...")
     return jsonify({"prompt": "WELCOME TO AI VIDDOR API"})
 
+
 @app.route('/generate-prompt', methods=['GET'])
 def api_generate_prompt():
     prompt = generate_random_prompt()
     return jsonify({"prompt": prompt})
+
+# @app.route('/generate-paint', methods=['POST'])
+# def api_generate_painters():
+#     THE_CANVAS_STRUCTURE = get_canvas_standard() #We can call a function here to return the standard of canvas structure.
+#     data = request.json
+#     message = data.get('prompt')
+#     canvas_height = data.get('height')
+#     canvas_width = data.get('width')
+#     final_prompt = f"{message} - Put into consideration that the canvas has height: {canvas_height} and width: {canvas_width}. So do not exceed this points when making your drawing/painting/design"
+#     text = generate_painter(message=final_prompt, canvas_structure=THE_CANVAS_STRUCTURE)
+#     print(message)
+#     print(text)
+#     return jsonify({"text": text})
+
+
+@app.route('/generate-paint', methods=['POST'])
+def api_generate_paint():
+    # Initialize the canvas structure or call a function to define it
+    THE_CANVAS_STRUCTURE = get_canvas_standard() 
+
+    # Receive and process the incoming JSON data
+    data = request.json
+    message = data.get('prompt')
+    canvas_height = data.get('height')
+    canvas_width = data.get('width')
+
+    # Create the final prompt including canvas dimensions
+    final_prompt = f"{message} - Put into consideration that the canvas has height: {canvas_height} and width: {canvas_width} so do not exceed it"
+
+    # Call the AI model to generate the painter data
+    generated_data = generate_painter(message=final_prompt, canvas_structure=THE_CANVAS_STRUCTURE)
+
+    # Print statements for debugging (optional)
+    print("Original Prompt:", message)
+    print("Generated Data:", generated_data)
+
+    # Extract JSON structure from the AI's output (assume the output is a mix of text and JSON)
+    # This function would clean and extract the JSON data
+    canvas_elements = extract_json_from_text(generated_data)
+
+    # Return the entire text and the cleaned JSON structure
+    return jsonify({"text": generated_data, "canvasElements": canvas_elements})
+
 
 @app.route('/generate-text', methods=['POST'])
 def api_generate_text():
