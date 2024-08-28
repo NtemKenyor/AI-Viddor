@@ -41,29 +41,8 @@ def generate_text(message, max_tokens=300):
 
 def generate_painter(message, max_tokens=3000, canvas_structure=None):
     # Example: structure for canvas elements (adjust according to your needs)
-    canvas_elements_ = '''canvas_elements = [
-        {
-            "type": "rectangle",
-            "x": 50,
-            "y": 50,
-            "width": 200,
-            "height": 100,
-            "color": "rgba(0, 255, 0, 0.5)",
-            "borderColor": "black",
-            "borderWidth": 2
-        },
-        {
-            "type": "line",
-            "x1": 300,
-            "y1": 50,
-            "x2": 500,
-            "y2": 150,
-            "color": "blue",
-            "lineWidth": 5
-        },
-        # Add other elements like rectangles, ellipses, etc.
-    ]'''
-    messages = [{f"role": "system", "content": "You are a skilled canvas painter and creative. you are very good in drawing. Only return a 'canvas_elements' json structure like this: {canvas_elements_} . You can add/learn from the shapes in this other json structure: {canvas_structure}"}]
+    canvas_elements_ = f'''canvas_elements = {canvas_structure}'''
+    messages = [{f"role": "system", "content": f"You are a skilled canvas painter and creative. you are very good in drawing. Only return a 'canvas_elements' json structure like this: {canvas_elements_} . "}]
     if message:
         messages.append({"role": "user", "content": message})
         chat = openai.ChatCompletion.create(
