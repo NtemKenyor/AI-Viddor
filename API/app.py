@@ -264,6 +264,11 @@ def api_generate_prompt():
     # prompt = generate_random_prompt()
     return jsonify({"Status": "true", "msg": "Connected to the Memory Game's API"})
 
+@app.route('/MemoryGame', methods=['GET'])
+def api_generate_prompt():
+    # prompt = generate_random_prompt()
+    return jsonify({"Status": "true", "msg": "Successfully. API connected."})
+
 
 # @app.route('/generate-paint', methods=['POST'])
 # def api_generate_painters():
