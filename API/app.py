@@ -258,6 +258,13 @@ def api_generate_prompt():
     prompt = generate_random_prompt()
     return jsonify({"prompt": prompt})
 
+
+@app.route('/Memory_Game', methods=['POST'])
+def api_generate_prompt():
+    # prompt = generate_random_prompt()
+    return jsonify({"Status": "true", "msg": "Connected to the Memory Game's API"})
+
+
 # @app.route('/generate-paint', methods=['POST'])
 # def api_generate_painters():
 #     THE_CANVAS_STRUCTURE = get_canvas_standard() #We can call a function here to return the standard of canvas structure.
