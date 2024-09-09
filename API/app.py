@@ -267,7 +267,7 @@ def api_generate_prompt():
 @app.route('/MemoryGame', methods=['GET'])
 def api_generate_prompt():
     # prompt = generate_random_prompt()
-    return jsonify({"Status": "true", "msg": "Successfully. API connected."})
+    return "Connected successfully to the Memory Airdrop Game API"
 
 
 # @app.route('/generate-paint', methods=['POST'])
