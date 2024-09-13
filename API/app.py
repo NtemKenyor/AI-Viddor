@@ -257,34 +257,7 @@ def welcome():
 def api_generate_prompt():
     prompt = generate_random_prompt()
     return jsonify({"prompt": prompt})
-
-
-@app.route('/Memory_Game', methods=['POST'])
-def api_generate_prompt():
-    return "Hello World"
-    # prompt = generate_random_prompt()
-    # return jsonify({"Status": "true", "msg": "Connected to the Memory Game's API"})
-
-@app.route('/MemoryGame', methods=['GET'])
-def api_generate_prompt():
-    return "Hello"
-    # prompt = generate_random_prompt()
-    # return "Connected successfully to the Memory Airdrop Game API"
-
-
-# @app.route('/generate-paint', methods=['POST'])
-# def api_generate_painters():
-#     THE_CANVAS_STRUCTURE = get_canvas_standard() #We can call a function here to return the standard of canvas structure.
-#     data = request.json
-#     message = data.get('prompt')
-#     canvas_height = data.get('height')
-#     canvas_width = data.get('width')
-#     final_prompt = f"{message} - Put into consideration that the canvas has height: {canvas_height} and width: {canvas_width}. So do not exceed this points when making your drawing/painting/design"
-#     text = generate_painter(message=final_prompt, canvas_structure=THE_CANVAS_STRUCTURE)
-#     print(message)
-#     print(text)
-#     return jsonify({"text": text})
-
+    
 
 @app.route('/generate-paint', methods=['POST'])
 def api_generate_paint():
