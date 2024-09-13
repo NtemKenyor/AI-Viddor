@@ -297,13 +297,6 @@ def api_generate_text():
     print(text)
     return jsonify({"text": text})
 
-# @app.route('/generate-images', methods=['POST'])
-# def api_generate_images():
-#     data = request.json
-#     prompts = data.get('prompts')
-#     images = generate_images(prompts)
-#     return jsonify({"images": images})
-
 
 @app.route('/generate-images', methods=['POST'])
 def api_generate_images():
@@ -352,6 +345,5 @@ def api_clean_output_directory():
     clean_output_directory()
     return jsonify({"message": "Output directory cleaned"})
 
-if __name__ == '__main__':
-    app.run(debug=True)
-    
+# if __name__ == '__main__':
+    # app.run(debug=True)
