@@ -42,7 +42,7 @@ def generate_text(message, max_tokens=300):
 def generate_painter(message, max_tokens=3000, canvas_structure=None):
     # Example: structure for canvas elements (adjust according to your needs)
     canvas_elements_ = f'''canvas_elements = {canvas_structure}'''
-    messages = [{f"role": "system", "content": f"You are a skilled canvas painter and creative. you are very good in drawing. Only return a 'canvas_elements' json structure like this: {canvas_elements_} . "}]
+    messages = [{f"role": "system", "content": f"You are a skilled canvas painter and creative. Make sure you fill up over 70% of the entire canvas. you are very good in drawing. Only return a 'canvas_elements' json structure like this: {canvas_elements_} . "}]
     if message:
         messages.append({"role": "user", "content": message})
         chat = openai.ChatCompletion.create(
@@ -257,7 +257,7 @@ def welcome():
 def api_generate_prompt():
     prompt = generate_random_prompt()
     return jsonify({"prompt": prompt})
-    
+
 
 @app.route('/generate-paint', methods=['POST'])
 def api_generate_paint():
