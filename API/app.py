@@ -258,7 +258,7 @@ def api_generate_prompt():
     prompt = generate_random_prompt()
     return jsonify({"prompt": prompt})
 
-"""
+
 @app.route('/generate-paint', methods=['POST'])
 def api_generate_paint():
     # Initialize the canvas structure or call a function to define it
@@ -344,6 +344,6 @@ def api_create_video():
 def api_clean_output_directory():
     clean_output_directory()
     return jsonify({"message": "Output directory cleaned"})
-"""
+
 # if __name__ == '__main__':
     # app.run(debug=True)
